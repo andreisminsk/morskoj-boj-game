@@ -300,16 +300,27 @@ class Ship:
 # Torpedo — player's projectile
 # ---------------------------------------------------------------------------
 class Torpedo:
-    def __init__(self, start_x):
-        self.x = start_x
+    def __init__(self, world_x):
+        self.world_x = world_x  # Fixed world x position at time of firing
         self.y = SCREEN_H - 40  # Launch from bottom of periscope view
         self.speed = TORPEDO_SPEED
         self.alive = True
-        self.trail = []  # List of (x, y) for trail effect
+        self.trail = []  # List of (screen_x, y) for trail effect
 
-    def update(self):
+    def screen_x(self, world_offset):
+        """Convert world x to screen x, accounting for periscope rotation."""
+        sx = self.world_x - world_offset + PERISCOPE_CX
+        # Handle wrapping
+        if sx > WORLD_WIDTH / 2:
+            sx -= WORLD_WIDTH
+        elif sx < -WORLD_WIDTH / 2:
+            sx += WORLD_WIDTH
+        return sx
+
+    def update(self, world_offset):
         """Move torpedo upward toward the horizon."""
-        self.trail.append((self.x, self.y))
+        sx = self.screen_x(world_offset)
+        self.trail.append((sx, self.y))
         if len(self.trail) > 8:
             self.trail.pop(0)
         self.y -= self.speed
@@ -317,20 +328,23 @@ class Torpedo:
         if self.y < HORIZON_Y - 30:
             self.alive = False
 
-    def draw(self, surface):
+    def draw(self, surface, world_offset):
         """Draw torpedo as a bright dot with a trailing line."""
-        # Trail
+        sx = self.screen_x(world_offset)
+        # Trail — recompute positions from stored world coords
+        # (trail stores screen coords that shift with periscope, so we just draw them)
         for i, (tx, ty) in enumerate(self.trail):
             alpha = int(255 * (i + 1) / len(self.trail)) if self.trail else 255
             c = (0, min(255, alpha), min(255, alpha))
             pygame.draw.circle(surface, c, (int(tx), int(ty)), 1)
         # Head
-        pygame.draw.circle(surface, WHITE, (int(self.x), int(self.y)), 3)
-        pygame.draw.circle(surface, NEON_CYAN, (int(self.x), int(self.y)), 2)
+        pygame.draw.circle(surface, WHITE, (int(sx), int(self.y)), 3)
+        pygame.draw.circle(surface, NEON_CYAN, (int(sx), int(self.y)), 2)
 
-    def get_hitbox(self):
+    def get_hitbox(self, world_offset):
         """Small hitbox for the torpedo head."""
-        return pygame.Rect(int(self.x) - 4, int(self.y) - 4, 8, 8)
+        sx = self.screen_x(world_offset)
+        return pygame.Rect(int(sx) - 4, int(self.y) - 4, 8, 8)
 
 
 # ---------------------------------------------------------------------------
@@ -475,9 +489,8 @@ class Game:
     def fire_torpedo(self):
         """Launch a torpedo from the bottom center of the periscope view."""
         if self.torpedoes_left > 0 and not self.game_over:
-            # Torpedo launches from center-bottom of periscope view
-            # It travels straight up, so its x is always PERISCOPE_CX
-            t = Torpedo(PERISCOPE_CX)
+            # Torpedo launches at current periscope world position
+            t = Torpedo(self.periscope.world_offset)
             self.torpedoes.append(t)
             self.torpedoes_left -= 1
             self.snd_torpedo.play()
@@ -488,7 +501,7 @@ class Game:
         for torpedo in self.torpedoes:
             if not torpedo.alive:
                 continue
-            t_box = torpedo.get_hitbox()
+            t_box = torpedo.get_hitbox(world_offset)
             hit = False
             for ship in self.ships:
                 if not ship.alive:
@@ -498,7 +511,7 @@ class Game:
                     # Hit!
                     ship.alive = False
                     torpedo.alive = False
-                    self.explosions.append(Explosion(torpedo.x, torpedo.y, ship.color))
+                    self.explosions.append(Explosion(torpedo.screen_x(world_offset), torpedo.y, ship.color))
                     self.score += ship.points
                     self.hits += 1
                     self.snd_explosion.play()
@@ -512,11 +525,12 @@ class Game:
         # Check for torpedoes that went past horizon without hitting (miss)
         for torpedo in self.torpedoes:
             if not torpedo.alive and torpedo.y < HORIZON_Y:
+                sx = torpedo.screen_x(world_offset)
                 # Only count as miss splash if not already processed as hit
                 already_hit = any(e for e in self.explosions
-                                  if abs(e.x - torpedo.x) < 30 and e.frame < 5)
+                                  if abs(e.x - sx) < 30 and e.frame < 5)
                 if not already_hit:
-                    self.splashes.append(Splash(torpedo.x, HORIZON_Y))
+                    self.splashes.append(Splash(sx, HORIZON_Y))
                     self.snd_miss.play()
 
     def check_bonus(self):
@@ -589,7 +603,7 @@ class Game:
 
         # Bonus round indicator
         if self.bonus_round:
-            bonus_text = "★ БОНУСНЫЙ РАУНД ★"
+            bonus_text = ">> БОНУСНЫЙ РАУНД <<"
             pulse = int(128 + 127 * math.sin(self.frame_count * 0.1))
             bt = self.font_large.render(bonus_text, True, (pulse, pulse, 0))
             surface.blit(bt, (SCREEN_W // 2 - bt.get_width() // 2, 80))
@@ -609,29 +623,23 @@ class Game:
         # Left arrow — lights up when bearing is positive (looking right)
         left_active = self.periscope.bearing > 0.5
         left_color = NEON_GREEN if left_active else DIM_GREEN
-        left_fill = NEON_GREEN if left_active else (0, 0, 0)
         lx = bx - arrow_gap - arrow_size
         left_arrow = [
             (lx + arrow_size, arrow_y - arrow_size // 2),
             (lx, arrow_y),
             (lx + arrow_size, arrow_y + arrow_size // 2),
         ]
-        if left_active:
-            pygame.draw.polygon(surface, left_fill, left_arrow)
         pygame.draw.polygon(surface, left_color, left_arrow, 2)
 
         # Right arrow — lights up when bearing is negative (looking left)
         right_active = self.periscope.bearing < -0.5
         right_color = NEON_GREEN if right_active else DIM_GREEN
-        right_fill = NEON_GREEN if right_active else (0, 0, 0)
         rx = bx + label_b.get_width() + arrow_gap
         right_arrow = [
             (rx, arrow_y - arrow_size // 2),
             (rx + arrow_size, arrow_y),
             (rx, arrow_y + arrow_size // 2),
         ]
-        if right_active:
-            pygame.draw.polygon(surface, right_fill, right_arrow)
         pygame.draw.polygon(surface, right_color, right_arrow, 2)
 
         # Game over
@@ -710,8 +718,9 @@ class Game:
                     ship.update()
 
                 # Update torpedoes
+                world_offset = self.periscope.world_offset
                 for torpedo in self.torpedoes:
-                    torpedo.update()
+                    torpedo.update(world_offset)
 
                 # Update explosions
                 for explosion in self.explosions:
@@ -754,8 +763,9 @@ class Game:
                 ship.draw(self.screen, world_offset)
 
             # Draw torpedoes
+            world_offset = self.periscope.world_offset
             for torpedo in self.torpedoes:
-                torpedo.draw(self.screen)
+                torpedo.draw(self.screen, world_offset)
 
             # Draw explosions
             for explosion in self.explosions:
