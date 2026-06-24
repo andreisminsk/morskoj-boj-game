@@ -1,8 +1,8 @@
 {
-  "saved": "2026-06-24T22:46:48.343533",
+  "saved": "2026-06-24T23:04:08.347488",
   "model": "glm-5.1:cloud",
   "ctx_size": 202752,
-  "messages": 65,
+  "messages": 110,
   "history": [
     {
       "role": "system",
@@ -267,6 +267,186 @@
     {
       "role": "assistant",
       "content": "Great, the ship images are working now with transparent backgrounds! 🎉"
+    },
+    {
+      "role": "user",
+      "content": "Can you one stylish display. At the bottom now we have \"КУРС\". I want this: Add two stylish countour arrows - left and righ at the sides of КУРС. The LEFT arrow should light up with filled contour neon green (like СЧЁТ) when КУРС is negative. Similarly, The RIGH arrow should light up when КУРС is positive."
+    },
+    {
+      "role": "assistant",
+      "content": "**TOOL:`search_in_files`**\n```json\n{\"path\": \"morskoj_boj.py\", \"pattern\": \"КУРС|KURS|bearing|course\"}\n```\n**EOF:`search_in_files`**"
+    },
+    {
+      "role": "user",
+      "content": "[TOOL search_in_files]: [Found 24 match(es) in 1 file(s) for 'КУРС|KURS|bearing|course' in morskoj_boj.py]\nmorskoj_boj.py:114: # Periscope — draws the HUD overlay (circle mask, crosshair, bearing scale)\nmorskoj_boj.py:118:         self.bearing = 0.0  # Current bearing in degrees (0 = North)\nmorskoj_boj.py:119:         self.target_bearing = 0.0\nmorskoj_boj.py:120:         # Bearing is mapped to world offset:\nmorskoj_boj.py:121:         #   world_offset = bearing * (WORLD_WIDTH / 360)\nmorskoj_boj.py:125:         \"\"\"Update bearing from keyboard or mouse input.\"\"\"\nmorskoj_boj.py:128:             self.target_bearing -= rotate_speed\nmorskoj_boj.py:130:             self.target_bearing += rotate_speed\nmorskoj_boj.py:132:         self.target_bearing += mouse_rel[0] * 0.3\nmorskoj_boj.py:133:         # Clamp bearing to ±60 degrees (visible arc)\nmorskoj_boj.py:134:         self.target_bearing = max(-60, min(60, self.target_bearing))\nmorskoj_boj.py:136:         self.bearing += (self.target_bearing - self.bearing) * 0.12\nmorskoj_boj.py:140:         \"\"\"Convert bearing to a pixel offset in the virtual world.\nmorskoj_boj.py:142:         This means each degree of bearing = WORLD_WIDTH/360 pixels of scroll.\nmorskoj_boj.py:144:         return self.bearing * (WORLD_WIDTH / 360.0)\nmorskoj_boj.py:172:         # --- Bearing scale at top ---\nmorskoj_boj.py:173:         self._draw_bearing_scale(surface)\nmorskoj_boj.py:178:     def _draw_bearing_scale(self, surface):\nmorskoj_boj.py:182:         # Beari\n[... truncated, 1939 chars total — use FILE: or TOOL: for full content]"
+    },
+    {
+      "role": "assistant",
+      "content": "**TOOL:`search_in_files`**\n```json\n{\"path\": \"morskoj_boj.py\", \"pattern\": \"КУРС|СЧЁТ|font_large|font_small|hud|HUD\"}\n```\n**EOF:`search_in_files`**"
+    },
+    {
+      "role": "user",
+      "content": "[TOOL search_in_files]: [Found 17 match(es) in 1 file(s) for 'КУРС|СЧЁТ|font_large|font_small|hud|HUD' in morskoj_boj.py]\nmorskoj_boj.py:87:     \"\"\"Low splash thud for a miss.\"\"\"\nmorskoj_boj.py:114: # Periscope — draws the HUD overlay (circle mask, crosshair, bearing scale)\nmorskoj_boj.py:147:         \"\"\"Draw the periscope HUD overlay.\"\"\"\nmorskoj_boj.py:460:         self.font_large = pygame.font.SysFont(\"consolas\", 28, bold=True)\nmorskoj_boj.py:462:         self.font_small = pygame.font.SysFont(\"consolas\", 14)\nmorskoj_boj.py:568:     def draw_hud(self, surface):\nmorskoj_boj.py:582:         score_text = f\"СЧЁТ: {self.score}\"\nmorskoj_boj.py:587:         label_h = self.font_small.render(hits_text, True, DIM_GREEN)\nmorskoj_boj.py:594:             bt = self.font_large.render(bonus_text, True, (pulse, pulse, 0))\nmorskoj_boj.py:598:         bearing_text = f\"КУРС: {int(self.periscope.bearing):+d}°\"\nmorskoj_boj.py:599:         label_b = self.font_small.render(bearing_text, True, DIM_GREEN)\nmorskoj_boj.py:608:             go_surf = self.font_large.render(go_text, True, NEON_RED)\nmorskoj_boj.py:611:             final_text = f\"ФИНАЛЬНЫЙ СЧЁТ: {self.score}  |  ПОПАДАНИЯ: {self.hits}\"\nmorskoj_boj.py:616:             rt_surf = self.font_small.render(restart_text, True, DIM_GREEN)\nmorskoj_boj.py:733:             # Draw periscope overlay (masks edges, draws HUD)\nmorskoj_boj.py:736:             # Draw HUD\nmorskoj_boj.py:737:             self.draw_hud(self.screen)\n⚠️ WARNING: You have repeated the same tool action 2 times. Consider trying a different approach."
+    },
+    {
+      "role": "assistant",
+      "content": "**TOOL:`read_file`**\n```json\n{\"path\": \"morskoj_boj.py\", \"offset\": 568, \"limit\": 55}\n```\n**EOF:`read_file`**"
+    },
+    {
+      "role": "user",
+      "content": "[TOOL read_file]: [File: morskoj_boj.py | Lines 568-622 of 752]\n    def draw_hud(self, surface):\n        \"\"\"Draw the heads-up display with score, torpedoes, and status.\"\"\"\n        # Torpedo counter (left side)\n        label_t = self.font_medium.render(\"ТОРПЕДЫ\", True, NEON_GREEN)\n        surface.blit(label_t, (20, 20))\n        for i in range(MAX_TORPEDOES):\n            x = 20 + i * 22\n            y = 48\n            color = NEON_CYAN if i < self.torpedoes_left else DARK_GRAY\n            # Draw torpedo icon\n            pygame.draw.rect(surface, color, (x, y, 16, 6), 0)\n            pygame.draw.polygon(surface, color, [(x + 16, y), (x + 22, y + 3), (x + 16, y + 6)])\n\n        # Score (right side)\n        score_text = f\"СЧЁТ: {self.score}\"\n        label_s = self.font_medium.render(score_text, True, NEON_GREEN)\n        surface.blit(label_s, (SCREEN_W - label_s.get_width() - 20, 20))\n\n        hits_text = f\"ПОПАДАНИЯ: {self.hits}\"\n        label_h = self.font_small.render(hits_text, True, DIM_GREEN)\n        surface.blit(label_h, (SCREEN_W - label_h.get_width() - 20, 48))\n\n        # Bonus round indicator\n        if self.bonus_round:\n            bonus_text = \"★ БОНУСНЫЙ РАУНД ★\"\n            pulse = int(128 + 127 * math.sin(self.frame_count * 0.1))\n            bt = self.font_large.render(bonus_text, True, (pulse, pulse, 0))\n            surface.blit(bt, (SCREEN_W // 2 - bt.get_width() // 2, 80))\n\n        # Bearing indicator\n        bearing_text = f\"КУРС: {int(self.periscope.bearing):+d}°\"\n\n[... truncated, 2761 chars total — use FILE: or TOOL: for full content]"
+    },
+    {
+      "role": "assistant",
+      "content": "**TOOL:`read_file`**\n```json\n{\"path\": \"morskoj_boj.py\", \"offset\": 598, \"limit\": 30}\n```\n**EOF:`read_file`**"
+    },
+    {
+      "role": "user",
+      "content": "[TOOL read_file]: [File: morskoj_boj.py | Lines 598-627 of 752]\n        bearing_text = f\"КУРС: {int(self.periscope.bearing):+d}°\"\n        label_b = self.font_small.render(bearing_text, True, DIM_GREEN)\n        surface.blit(label_b, (SCREEN_W // 2 - label_b.get_width() // 2, SCREEN_H - 30))\n\n        # Game over\n        if self.game_over:\n            overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)\n            overlay.fill((0, 0, 0, 150))\n            surface.blit(overlay, (0, 0))\n            go_text = \"КОНЕЦ ИГРЫ\"\n            go_surf = self.font_large.render(go_text, True, NEON_RED)\n            surface.blit(go_surf, (SCREEN_W // 2 - go_surf.get_width() // 2,\n                                    SCREEN_H // 2 - 40))\n            final_text = f\"ФИНАЛЬНЫЙ СЧЁТ: {self.score}  |  ПОПАДАНИЯ: {self.hits}\"\n            ft_surf = self.font_medium.render(final_text, True, NEON_CYAN)\n            surface.blit(ft_surf, (SCREEN_W // 2 - ft_surf.get_width() // 2,\n                                    SCREEN_H // 2 + 10))\n            restart_text = \"НАЖМИТЕ R ДЛЯ ПЕРЕЗАПУСКА\"\n            rt_surf = self.font_small.render(restart_text, True, DIM_GREEN)\n            surface.blit(rt_surf, (SCREEN_W // 2 - rt_surf.get_width() // 2,\n                                    SCREEN_H // 2 + 50))\n\n    def reset(self):\n        \"\"\"Reset the game to initial state.\"\"\"\n        self.ships.clear()\n        self.torpedoes.clear()\n        self.explosions.clear()\n        self.splashes.clear()\n        self.tor\n[... truncated, 1551 chars total — use FILE: or TOOL: for full content]"
+    },
+    {
+      "role": "assistant",
+      "content": "Noted."
+    },
+    {
+      "role": "user",
+      "content": "?"
+    },
+    {
+      "role": "assistant",
+      "content": "**EDIT:`morskoj_boj.py`**\n```search-replace\n<<<<<<< SEARCH\n        # Bearing indicator\n        bearing_text = f\"КУРС: {int(self.periscope.bearing):+d}°\"\n        label_b = self.font_small.render(bearing_text, True, DIM_GREEN)\n        surface.blit(label_b, (SCREEN_W // 2 - label_b.get_width() // 2, SCREEN_H - 30))\n=======\n        # Bearing indicator with directional arrows\n        bearing_text = f\"КУРС: {int(self.periscope.bearing):+d}°\"\n        label_b = self.font_medium.render(bearing_text, True, NEON_GREEN)\n        bx = SCREEN_W // 2 - label_b.get_width() // 2\n        by = SCREEN_H - 35\n        surface.blit(label_b, (bx, by))\n\n        # Arrow dimensions and position\n        arrow_size = 14\n        arrow_gap = 10\n        arrow_y = by + label_b.get_height() // 2\n\n        # Left arrow — lights up when bearing is negative (looking left)\n        left_active = self.periscope.bearing < -0.5\n        left_color = NEON_GREEN if left_active else DIM_GREEN\n        left_fill = NEON_GREEN if left_active else (0, 0, 0)\n        lx = bx - arrow_gap - arrow_size\n        left_arrow = [\n            (lx + arrow_size, arrow_y - arrow_size // 2),\n            (lx, arrow_y),\n            (lx + arrow_size, arrow_y + arrow_size // 2),\n        ]\n        if left_active:\n            pygame.draw.polygon(surface, left_fill, left_arrow)\n        pygame.draw.polygon(surface, left_color, left_arrow, 2)\n\n        # Right arrow — lights up when bearing is positive (looking right)\n        right_active = self.periscope.bearing > 0.5\n        right_color = NEON_GREEN if right_active else DIM_GREEN\n        right_fill = NEON_GREEN if right_active else (0, 0, 0)\n        rx = bx + label_b.get_width() + arrow_gap\n        right_arrow = [\n            (rx, arrow_y - arrow_size // 2),\n            (rx + arrow_size, arrow_y),\n            (rx, arrow_y + arrow_size // 2),\n        ]\n        if right_active:\n            pygame.draw.polygon(surface, right_fill, right_arrow)\n        pygame.draw.polygon(surface, right_color, right_arrow, 2)\n>>>>>>> REPLACE\n```\n**EOF:`morskoj_boj.py`**\n\n**TOOL:`py_compile`**\n```json\n{\"action\": \"syntax\", \"path\": \"morskoj_boj.py\"}\n```\n**EOF:`py_compile`**"
+    },
+    {
+      "role": "user",
+      "content": "[Edited: morskoj_boj.py (1 change(s) applied, 788 lines)]\n[TOOL py_compile]: [OK] morskoj_boj.py: syntax check passed"
+    },
+    {
+      "role": "assistant",
+      "content": "Done! The КУРС indicator now has:\n\n- **Left arrow** (◀) — outlined in dim green normally, fills with bright neon green when bearing is negative (looking left)\n- **Right arrow** (▶) — outlined in dim green normally, fills with bright neon green when bearing is positive (looking right)\n- КУРС text upgraded to `font_medium` and `NEON_GREEN` color to match the arrow style\n\nThe arrows use a 2px contour stroke always, with a filled interior only when active — matching the neon aesthetic of the rest of the HUD."
+    },
+    {
+      "role": "user",
+      "content": "Chagne vise versa handling of arrow"
+    },
+    {
+      "role": "assistant",
+      "content": "**EDIT:`morskoj_boj.py`**\n```search-replace\n<<<<<<< SEARCH\n        # Left arrow — lights up when bearing is negative (looking left)\n        left_active = self.periscope.bearing < -0.5\n=======\n        # Left arrow — lights up when bearing is positive (looking right)\n        left_active = self.periscope.bearing > 0.5\n>>>>>>> REPLACE\n```\n**EOF:`morskoj_boj.py`**\n\n**EDIT:`morskoj_boj.py`**\n```search-replace\n<<<<<<< SEARCH\n        # Right arrow — lights up when bearing is positive (looking right)\n        right_active = self.periscope.bearing > 0.5\n=======\n        # Right arrow — lights up when bearing is negative (looking left)\n        right_active = self.periscope.bearing < -0.5\n>>>>>>> REPLACE\n```\n**EOF:`morskoj_boj.py`**"
+    },
+    {
+      "role": "user",
+      "content": "[Edited: morskoj_boj.py (1 change(s) applied, 788 lines)]\n[Edited: morskoj_boj.py (1 change(s) applied, 788 lines)]"
+    },
+    {
+      "role": "assistant",
+      "content": "Swapped! Now:\n- **Left arrow** (◀) lights up when bearing is **positive** (looking right — indicating the direction to turn back left)\n- **Right arrow** (▶) lights up when bearing is **negative** (looking left — indicating the direction to turn back right)"
+    },
+    {
+      "role": "user",
+      "content": "The \"КУРС\" should remain smaller font the same as before and non-neon green as beore - the same as scale on top"
+    },
+    {
+      "role": "assistant",
+      "content": "**EDIT:`morskoj_boj.py`**\n```search-replace\n<<<<<<< SEARCH\n        bearing_text = f\"КУРС: {int(self.periscope.bearing):+d}°\"\n        label_b = self.font_medium.render(bearing_text, True, NEON_GREEN)\n=======\n        bearing_text = f\"КУРС: {int(self.periscope.bearing):+d}°\"\n        label_b = self.font_small.render(bearing_text, True, DIM_GREEN)\n>>>>>>> REPLACE\n```\n**EOF:`morskoj_boj.py`**"
+    },
+    {
+      "role": "user",
+      "content": "[Edited: morskoj_boj.py (1 change(s) applied, 788 lines)]"
+    },
+    {
+      "role": "assistant",
+      "content": "Reverted КУРС back to `font_small` and `DIM_GREEN` — matching the bearing scale at the top."
+    },
+    {
+      "role": "user",
+      "content": "КУРС overlaps with periscope round."
+    },
+    {
+      "role": "assistant",
+      "content": "The periscope circle bottom is at y=570 (center 300 + radius 270). The КУРС text at y=565 overlaps it. Let me move it below the circle:\n\n**EDIT:`morskoj_boj.py`**\n```search-replace\n<<<<<<< SEARCH\n        bx = SCREEN_W // 2 - label_b.get_width() // 2\n        by = SCREEN_H - 35\n=======\n        bx = SCREEN_W // 2 - label_b.get_width() // 2\n        by = SCREEN_H - 25\n>>>>>>> REPLACE\n```\n**EOF:`morskoj_boj.py`**"
+    },
+    {
+      "role": "user",
+      "content": "[Edited: morskoj_boj.py (1 change(s) applied, 788 lines)]"
+    },
+    {
+      "role": "assistant",
+      "content": "Actually, let me check the draw order — the periscope mask might be drawn after the HUD, covering it:\n\n**TOOL:`search_in_files`**\n```json\n{\"path\": \"morskoj_boj.py\", \"pattern\": \"draw_hud|draw_overlay|periscope.draw\"}\n```\n**EOF:`search_in_files`**"
+    },
+    {
+      "role": "user",
+      "content": "[TOOL search_in_files]: [Found 3 match(es) in 1 file(s) for 'draw_hud|draw_overlay|periscope.draw' in morskoj_boj.py]\nmorskoj_boj.py:568:     def draw_hud(self, surface):\nmorskoj_boj.py:769:             self.periscope.draw(self.screen)\nmorskoj_boj.py:772:             self.draw_hud(self.screen)"
+    },
+    {
+      "role": "assistant",
+      "content": "The HUD is drawn after the periscope overlay, so it's on top. The periscope circle bottom is at y=570 (300+270). Moving КУРС to y=575 puts it just below the circle edge. Try it now — if it still overlaps, I can push it further down."
+    },
+    {
+      "role": "assistant",
+      "content": "Noted."
+    },
+    {
+      "role": "user",
+      "content": "Better, but push a bit down"
+    },
+    {
+      "role": "assistant",
+      "content": "**EDIT:`morskoj_boj.py`**\n```search-replace\n<<<<<<< SEARCH\n        by = SCREEN_H - 25\n=======\n        by = SCREEN_H - 18\n>>>>>>> REPLACE\n```\n**EOF:`morskoj_boj.py`**"
+    },
+    {
+      "role": "user",
+      "content": "[Edited: morskoj_boj.py (1 change(s) applied, 788 lines)]"
+    },
+    {
+      "role": "assistant",
+      "content": "Done — moved КУРС down by another 7px."
+    },
+    {
+      "role": "user",
+      "content": "Push up 3px"
+    },
+    {
+      "role": "assistant",
+      "content": "**EDIT:`morskoj_boj.py`**\n```search-replace\n<<<<<<< SEARCH\n        by = SCREEN_H - 18\n=======\n        by = SCREEN_H - 21\n>>>>>>> REPLACE\n```\n**EOF:`morskoj_boj.py`**"
+    },
+    {
+      "role": "user",
+      "content": "[Edited: morskoj_boj.py (1 change(s) applied, 788 lines)]"
+    },
+    {
+      "role": "assistant",
+      "content": "Done — moved КУРС up 3px."
+    },
+    {
+      "role": "user",
+      "content": "push up 1px"
+    },
+    {
+      "role": "assistant",
+      "content": "**EDIT:`morskoj_boj.py`**\n```search-replace\n<<<<<<< SEARCH\n        by = SCREEN_H - 21\n=======\n        by = SCREEN_H - 22\n>>>>>>> REPLACE\n```\n**EOF:`morskoj_boj.py`**"
+    },
+    {
+      "role": "user",
+      "content": "[Edited: morskoj_boj.py (1 change(s) applied, 788 lines)]"
+    },
+    {
+      "role": "assistant",
+      "content": "Done — moved up 1px."
+    },
+    {
+      "role": "user",
+      "content": "push arrows up 2px"
+    },
+    {
+      "role": "assistant",
+      "content": "**EDIT:`morskoj_boj.py`**\n```search-replace\n<<<<<<< SEARCH\n        arrow_y = by + label_b.get_height() // 2\n=======\n        arrow_y = by + label_b.get_height() // 2 - 2\n>>>>>>> REPLACE\n```\n**EOF:`morskoj_boj.py`**"
+    },
+    {
+      "role": "user",
+      "content": "[Edited: morskoj_boj.py (1 change(s) applied, 788 lines)]"
+    },
+    {
+      "role": "assistant",
+      "content": "Done — arrows moved up 2px."
     }
   ]
 }

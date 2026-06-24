@@ -594,10 +594,45 @@ class Game:
             bt = self.font_large.render(bonus_text, True, (pulse, pulse, 0))
             surface.blit(bt, (SCREEN_W // 2 - bt.get_width() // 2, 80))
 
-        # Bearing indicator
+        # Bearing indicator with directional arrows
         bearing_text = f"КУРС: {int(self.periscope.bearing):+d}°"
         label_b = self.font_small.render(bearing_text, True, DIM_GREEN)
-        surface.blit(label_b, (SCREEN_W // 2 - label_b.get_width() // 2, SCREEN_H - 30))
+        bx = SCREEN_W // 2 - label_b.get_width() // 2
+        by = SCREEN_H - 22
+        surface.blit(label_b, (bx, by))
+
+        # Arrow dimensions and position
+        arrow_size = 14
+        arrow_gap = 10
+        arrow_y = by + label_b.get_height() // 2 - 2
+
+        # Left arrow — lights up when bearing is positive (looking right)
+        left_active = self.periscope.bearing > 0.5
+        left_color = NEON_GREEN if left_active else DIM_GREEN
+        left_fill = NEON_GREEN if left_active else (0, 0, 0)
+        lx = bx - arrow_gap - arrow_size
+        left_arrow = [
+            (lx + arrow_size, arrow_y - arrow_size // 2),
+            (lx, arrow_y),
+            (lx + arrow_size, arrow_y + arrow_size // 2),
+        ]
+        if left_active:
+            pygame.draw.polygon(surface, left_fill, left_arrow)
+        pygame.draw.polygon(surface, left_color, left_arrow, 2)
+
+        # Right arrow — lights up when bearing is negative (looking left)
+        right_active = self.periscope.bearing < -0.5
+        right_color = NEON_GREEN if right_active else DIM_GREEN
+        right_fill = NEON_GREEN if right_active else (0, 0, 0)
+        rx = bx + label_b.get_width() + arrow_gap
+        right_arrow = [
+            (rx, arrow_y - arrow_size // 2),
+            (rx + arrow_size, arrow_y),
+            (rx, arrow_y + arrow_size // 2),
+        ]
+        if right_active:
+            pygame.draw.polygon(surface, right_fill, right_arrow)
+        pygame.draw.polygon(surface, right_color, right_arrow, 2)
 
         # Game over
         if self.game_over:
