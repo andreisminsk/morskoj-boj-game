@@ -9,6 +9,7 @@ import sys
 import math
 import random
 import struct
+import numpy
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -255,36 +256,37 @@ class Ship:
         return sx
 
     def draw(self, surface, world_offset):
-        """Draw the ship as a pixel-art silhouette."""
+        """Draw the ship using its loaded PNG image."""
         sx = self.screen_x(world_offset)
         # Cull if off-screen
         if sx < -self.width or sx > SCREEN_W + self.width:
             return
-        # Hull — main body rectangle
-        hull_rect = pygame.Rect(int(sx - self.width // 2),
-                                self.screen_y,
-                                self.width, self.height)
-        pygame.draw.rect(surface, self.color, hull_rect, 0)
-        # Superstructure — small rectangle on top
-        ss_w = max(4, self.width // 4)
-        ss_h = max(3, self.height // 2)
-        ss_rect = pygame.Rect(int(sx - ss_w // 2),
-                               self.screen_y - ss_h,
-                               ss_w, ss_h)
-        pygame.draw.rect(surface, self.color, ss_rect, 0)
-        # Mast — thin vertical line
-        mast_h = max(4, int(self.height * 0.8))
-        pygame.draw.line(surface, self.color,
-                         (int(sx), self.screen_y - ss_h - mast_h),
-                         (int(sx), self.screen_y - ss_h), 1)
-        # Glow effect — draw again with alpha for bloom
-        glow_surf = pygame.Surface((self.width + 8, self.height + 8), pygame.SRCALPHA)
+        # Get base image for this ship type
+        img = Ship.images.get(self.name)
+        if img is None:
+            return
+        # Scale to current depth-adjusted size
+        scaled = pygame.transform.smoothscale(img, (self.width, self.height))
+        # Flip horizontally if moving left (images face right by default)
+        if self.direction < 0:
+            scaled = pygame.transform.flip(scaled, True, False)
+        # Blit centered on (sx, screen_y), aligning bottom of image to screen_y
+        img_h = scaled.get_height()
+        # The image includes superstructure above the hull, so center vertically
+        # around screen_y (which is the waterline)
+        blit_x = int(sx - self.width // 2)
+        blit_y = self.screen_y - img_h // 2
+        # Glow effect — draw a dim copy behind for bloom
+        glow_surf = pygame.Surface((self.width + 8, img_h + 8), pygame.SRCALPHA)
         glow_color = (*self.color[:3], 40)
-        pygame.draw.rect(glow_surf, glow_color,
-                         (0, 0, self.width + 8, self.height + 8), 0)
-        surface.blit(glow_surf,
-                     (int(sx - self.width // 2 - 4),
-                      self.screen_y - 4))
+        glow_scaled = pygame.transform.smoothscale(img, (self.width + 8, img_h + 8))
+        if self.direction < 0:
+            glow_scaled = pygame.transform.flip(glow_scaled, True, False)
+        glow_scaled.fill(glow_color, special_flags=pygame.BLEND_RGBA_MULT)
+        glow_surf.blit(glow_scaled, (0, 0))
+        surface.blit(glow_surf, (blit_x - 4, blit_y - 4))
+        # Main image
+        surface.blit(scaled, (blit_x, blit_y))
 
     def get_hitbox(self, world_offset):
         """Return a screen-space Rect for collision detection."""
@@ -412,6 +414,25 @@ class Game:
         self.screen = pygame.display.set_mode((SCREEN_W, SCREEN_H))
         pygame.display.set_caption("Морской Бой — Morskoj Boj (Sea Battle)")
         self.clock = pygame.time.Clock()
+
+        # Load ship images and strip non-neon backgrounds
+        Ship.images = {}
+        for name, fname in [("Destroyer", "destroyer.png"),
+                            ("Cruiser", "cruiser.png"),
+                            ("Battleship", "battleship.png")]:
+            img = pygame.image.load(fname).convert_alpha()
+            arr = pygame.surfarray.pixels_alpha(img)
+            rgb = pygame.surfarray.array3d(img)
+            # Make pixels transparent where all 3 channels are similar (gray/bkg)
+            # Keep pixels where one channel dominates (neon colors)
+            r, g, b = rgb[:,:,0], rgb[:,:,1], rgb[:,:,2]
+            max_c = numpy.maximum(numpy.maximum(r, g), b)
+            min_c = numpy.minimum(numpy.minimum(r, g), b)
+            # If max-min < 40, it's a gray/background pixel → transparent
+            is_gray = (max_c.astype(numpy.int16) - min_c.astype(numpy.int16)) < 40
+            arr[is_gray] = 0
+            del arr  # unlock surface
+            Ship.images[name] = img
 
         # Procedural sound effects
         self.snd_torpedo = generate_torpedo_sound()
