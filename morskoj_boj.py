@@ -475,9 +475,9 @@ class Game:
         self.font_medium = pygame.font.SysFont("consolas", 20)
         self.font_small = pygame.font.SysFont("consolas", 14)
 
-        # Stars (static background decoration)
-        self.stars = [(random.randint(0, SCREEN_W), random.randint(0, HORIZON_Y - 20))
-                      for _ in range(40)]
+        # Stars (parallax background decoration) — stored as world coordinates
+        self.stars = [(random.randint(0, WORLD_WIDTH), random.randint(0, HORIZON_Y - 20))
+                      for _ in range(80)]
 
         # Wave animation offset
         self.wave_offset = 0.0
@@ -555,10 +555,16 @@ class Game:
             b = int(15 + 40 * frac)
             pygame.draw.line(surface, (r, g, b), (0, y), (SCREEN_W, y))
 
-        # Stars
-        for sx, sy in self.stars:
-            brightness = random.randint(120, 200) if random.random() > 0.95 else 160
-            pygame.draw.circle(surface, (brightness, brightness, brightness), (sx, sy), 1)
+        # Stars — parallax scroll at 0.3x world offset (distant objects move slower)
+        parallax = 0.3
+        star_offset = self.periscope.world_offset * parallax
+        for wx, sy in self.stars:
+            sx = int(wx - star_offset) % WORLD_WIDTH
+            # Wrap into screen range
+            sx = sx - WORLD_WIDTH if sx > SCREEN_W else sx
+            if 0 <= sx < SCREEN_W:
+                brightness = random.randint(120, 200) if random.random() > 0.95 else 160
+                pygame.draw.circle(surface, (brightness, brightness, brightness), (sx, sy), 1)
 
         # Water
         for y in range(HORIZON_Y, SCREEN_H):
